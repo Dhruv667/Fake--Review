@@ -1,6 +1,10 @@
 import streamlit as st
 import re
 
+# Initialize session state for the text area
+if "review_text" not in st.session_state:
+    st.session_state.review_text = ""
+
 def detect_fake_review(review_text):
     score = 0
     max_score = 0
@@ -141,100 +145,207 @@ def detect_fake_review(review_text):
     
     return prediction, confidence
 
-st.set_page_config(page_title="Fake Review Detector", layout="wide")
+# Page configuration
+st.set_page_config(
+    page_title="Review Authenticity Checker",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
-st.title("🔍 Fake Review Detection System")
-st.markdown("**Advanced Machine Learning Based Detection with 88% Accuracy**")
-st.markdown("---")
+# Custom CSS for better styling
+st.markdown("""
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+        .main {
+            background: transparent;
+        }
+        .stMetric {
+            background-color: rgba(30, 41, 59, 0.8);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        .result-card {
+            padding: 25px;
+            border-radius: 15px;
+            margin: 15px 0;
+            border-left: 5px solid;
+        }
+        .fake-card {
+            background: rgba(239, 68, 68, 0.1);
+            border-left-color: #ef4444;
+        }
+        .genuine-card {
+            background: rgba(34, 197, 94, 0.1);
+            border-left-color: #22c55e;
+        }
+        .uncertain-card {
+            background: rgba(245, 158, 11, 0.1);
+            border-left-color: #f59e0b;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
-col_input, col_clear = st.columns([4, 1])
+# Header Section
+st.markdown("""
+    <div style='text-align: center; padding: 30px 0; margin-bottom: 30px;'>
+        <h1 style='font-size: 3em; margin: 0; background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;'>
+            🔍 Review Authenticity Checker
+        </h1>
+        <p style='font-size: 1.1em; color: #94a3b8; margin-top: 10px;'>
+            Detect fake reviews with pattern analysis
+        </p>
+    </div>
+""", unsafe_allow_html=True)
+
+st.divider()
+
+# Input Section
+col_input, col_button = st.columns([5, 1], gap="small")
 
 with col_input:
     review_input = st.text_area(
-        "Enter Review Text:",
-        placeholder="Paste the review you want to analyze...",
-        height=120,
-        key="review_input"
+        "Paste Review to Analyze",
+        value=st.session_state.review_text,
+        placeholder="Enter the review text here...",
+        height=140,
+        key="review_input",
+        label_visibility="collapsed"
     )
+    st.session_state.review_text = review_input
 
-with col_clear:
+with col_button:
     st.write("")
     st.write("")
-    if st.button("🗑️ Clear", use_container_width=True):
+    st.write("")
+    if st.button("🗑️ Clear", use_container_width=True, help="Clear the text area"):
+        st.session_state.review_text = ""
         st.rerun()
 
+st.divider()
+
+# Analysis Section
 if review_input and review_input.strip():
     prediction, confidence = detect_fake_review(review_input)
     
-    col1, col2, col3 = st.columns(3)
+    # Main Result Display
+    col1, col2, col3 = st.columns(3, gap="medium")
     
     with col1:
         if prediction == "GENUINE":
-            st.success(f"### ✅ GENUINE")
+            st.markdown("""
+                <div style='text-align: center; padding: 20px; background: rgba(34, 197, 94, 0.1); border-radius: 10px; border: 2px solid #22c55e;'>
+                    <h2 style='color: #22c55e; margin: 0;'>✅ GENUINE</h2>
+                </div>
+            """, unsafe_allow_html=True)
         elif prediction == "FAKE":
-            st.error(f"### ❌ FAKE")
+            st.markdown("""
+                <div style='text-align: center; padding: 20px; background: rgba(239, 68, 68, 0.1); border-radius: 10px; border: 2px solid #ef4444;'>
+                    <h2 style='color: #ef4444; margin: 0;'>❌ FAKE</h2>
+                </div>
+            """, unsafe_allow_html=True)
         else:
-            st.warning(f"### ⚠️ UNCERTAIN")
+            st.markdown("""
+                <div style='text-align: center; padding: 20px; background: rgba(245, 158, 11, 0.1); border-radius: 10px; border: 2px solid #f59e0b;'>
+                    <h2 style='color: #f59e0b; margin: 0;'>⚠️ UNCERTAIN</h2>
+                </div>
+            """, unsafe_allow_html=True)
     
     with col2:
-        st.metric("Confidence Score", f"{confidence:.1f}%")
+        st.metric("Confidence Score", f"{confidence:.1f}%", delta=None)
     
     with col3:
-        if prediction == "GENUINE":
-            st.metric("Authenticity Level", "High")
-        else:
-            st.metric("Authenticity Level", "Low")
+        authenticity = "High" if prediction == "GENUINE" else "Low"
+        st.metric("Authenticity Level", authenticity, delta=None)
     
-    st.progress(confidence / 100)
+    # Detailed Analysis Section
+    st.markdown("### 📊 Detailed Analysis")
     
-    st.markdown("---")
-    st.subheader("📊 Detailed Analysis")
-    
-    analysis_col1, analysis_col2 = st.columns(2)
+    analysis_col1, analysis_col2 = st.columns(2, gap="medium")
     
     with analysis_col1:
-        st.write("**Text Characteristics:**")
+        st.markdown("""
+            <div style='background: rgba(30, 41, 59, 0.8); padding: 20px; border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.2);'>
+                <h4 style='color: #60a5fa; margin-top: 0;'>📝 Text Characteristics</h4>
+        """, unsafe_allow_html=True)
+        
         caps_ratio = sum(1 for c in review_input if c.isupper()) / len(review_input) if len(review_input) > 0 else 0
-        st.write(f"• Capitalization: {caps_ratio*100:.1f}%")
-        st.write(f"• Exclamation marks: {review_input.count('!')}")
-        st.write(f"• Question marks: {review_input.count('?')}")
-        st.write(f"• Word count: {len(review_input.split())}")
+        col_a, col_b = st.columns(2)
+        with col_a:
+            st.metric("Capitalization", f"{caps_ratio*100:.1f}%", label_visibility="collapsed")
+        with col_b:
+            st.metric("Exclamation Marks", f"{review_input.count('!')}", label_visibility="collapsed")
+        
+        col_c, col_d = st.columns(2)
+        with col_c:
+            st.metric("Question Marks", f"{review_input.count('?')}", label_visibility="collapsed")
+        with col_d:
+            st.metric("Word Count", f"{len(review_input.split())}", label_visibility="collapsed")
+        
+        st.markdown("</div>", unsafe_allow_html=True)
     
     with analysis_col2:
-        st.write("**Language Patterns:**")
+        st.markdown("""
+            <div style='background: rgba(30, 41, 59, 0.8); padding: 20px; border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.2);'>
+                <h4 style='color: #60a5fa; margin-top: 0;'>🔤 Language Patterns</h4>
+        """, unsafe_allow_html=True)
+        
         extreme_words = ['amazing', 'incredible', 'perfect', 'awesome', 'best', 'worst']
         extreme_count = sum(review_input.lower().count(w) for w in extreme_words)
-        st.write(f"• Extreme sentiment words: {extreme_count}")
         
         genuine_indicators = ['but', 'however', 'problem', 'issue', 'downside']
         genuine_count = sum(1 for ind in genuine_indicators if ind.lower() in review_input.lower())
-        st.write(f"• Balanced language indicators: {genuine_count}")
         
         has_details = bool(re.search(r'\d+\s*(days?|weeks?|months?)', review_input))
-        st.write(f"• Specific timeframe: {'Yes' if has_details else 'No'}")
+        
+        col_e, col_f = st.columns(2)
+        with col_e:
+            st.metric("Extreme Words", f"{extreme_count}", label_visibility="collapsed")
+        with col_f:
+            st.metric("Balanced Language", f"{genuine_count}", label_visibility="collapsed")
+        
+        col_g = st.columns(1)[0]
+        with col_g:
+            st.metric("Specific Details", "Yes" if has_details else "No", label_visibility="collapsed")
+        
+        st.markdown("</div>", unsafe_allow_html=True)
     
-    st.markdown("---")
+    st.divider()
+    
+    # Final Verdict
     if prediction == "FAKE":
-        st.error(
-            "**⚠️ This review appears to be FAKE**\n\n"
-            "Indicators: Excessive capitalization • Extreme language • Generic phrases • Urgency tactics"
-        )
+        st.markdown("""
+            <div class='result-card fake-card'>
+                <h3 style='color: #ef4444; margin-top: 0;'>⚠️ Likely Fake Review</h3>
+                <p style='color: #cbd5e1; margin-bottom: 0;'>
+                    <strong>Red Flags:</strong> Excessive capitalization • Extreme language • Generic phrases • Suspicious urgency
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
     elif prediction == "GENUINE":
-        st.success(
-            "**✅ This review appears to be GENUINE**\n\n"
-            "Indicators: Balanced language • Specific details • Moderate tone • Natural patterns"
-        )
+        st.markdown("""
+            <div class='result-card genuine-card'>
+                <h3 style='color: #22c55e; margin-top: 0;'>✅ Likely Genuine Review</h3>
+                <p style='color: #cbd5e1; margin-bottom: 0;'>
+                    <strong>Indicators:</strong> Balanced language • Specific details • Moderate tone • Natural expression
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
     else:
-        st.warning(
-            "**❓ Classification Uncertain**\n\n"
-            "This review has mixed characteristics. Manual review recommended."
-        )
+        st.markdown("""
+            <div class='result-card uncertain-card'>
+                <h3 style='color: #f59e0b; margin-top: 0;'>❓ Mixed Signals</h3>
+                <p style='color: #cbd5e1; margin-bottom: 0;'>
+                    This review contains both genuine and suspicious patterns. Manual review may be needed.
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
     
-    st.markdown("---")
-    col_recheck, col_space = st.columns([1, 4])
-    with col_recheck:
-        if st.button("📝 Check Another Review", use_container_width=True):
-            st.rerun()
-
-else:
-    st.info("👈 **Enter a review text to begin analysis**")
+    st.divider()
+    
+    # Check another review button
+    if st.button("📝 Check Another Review", use_container_width=True):
+        st.session_state.review_text = ""
+        st.rerun()
