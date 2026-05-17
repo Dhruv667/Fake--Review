@@ -5,110 +5,138 @@ if "review_text" not in st.session_state:
     st.session_state.review_text = ""
 
 def detect_fake_review(review_text):
-    score = 0
-    max_score = 100
-    
-    fake_keywords = {
-        'extreme_positive': [
-            'amazing', 'incredible', 'perfect', 'awesome', 'unbelievable', 'life-changing',
-            'mind-blowing', 'spectacular', 'phenomenal', 'miraculous', 'exceptional',
-            'extraordinary', 'outstanding', 'magnificent', 'brilliant', 'excellent',
-            'wonderful', 'fantastic', 'terrific', 'superb', 'divine', 'heavenly',
-            'marvelous', 'splendid', 'gorgeous', 'beautiful', 'stunning', 'breathtaking',
-            'remarkable', 'impressive', 'astounding', 'astonishing', 'fabulous',
-            'delightful', 'exquisite', 'tremendous', 'unmatched', 'supreme'
-        ],
-        'extreme_negative': [
-            'worst', 'terrible', 'horrible', 'awful', 'disgusting', 'pathetic',
-            'abysmal', 'atrocious', 'dreadful', 'appalling', 'vile', 'repulsive',
-            'revolting', 'nauseating', 'sickening', 'heinous', 'deplorable',
-            'abominable', 'hideous', 'monstrous', 'detestable', 'ghastly',
-            'horrendous', 'nightmarish', 'disastrous', 'catastrophic'
-        ],
-        'urgency': [
-            'must buy', 'everyone needs', 'don\'t miss', 'grab now', 'hurry',
-            'rush', 'limited time', 'act fast', 'buy now', 'order now', 'get yours',
-            'right now', 'don\'t wait', 'before it\'s gone', 'while supplies',
-            'can\'t miss', 'asap', 'immediate', 'urgent', 'limited stock'
-        ],
-        'generic_praise': [
-            'best product', 'best ever', 'changed my life', 'game changer', 'exceeded expectations',
-            'beyond expectations', 'perfect fit', 'perfect product', 'highly recommend',
-            'all my friends', 'everyone should buy', 'spread the word', 'amazing value',
-            'steal of a deal', 'unbeatable price', 'can\'t believe the price'
-        ],
-        'marketing_speak': [
-            'revolutionary', 'innovative', 'cutting edge', 'state of the art',
-            'breakthrough', 'one of a kind', 'life-transforming', 'world-class',
-            'premium quality', 'luxury', 'game-changing'
-        ]
-    }
-    
-    genuine_keywords = [
-        'but', 'however', 'although', 'though', 'downside', 'issue', 'problem',
-        'could improve', 'better if', 'wish it had', 'complaint', 'not perfect',
-        'not ideal', 'somewhat', 'kind of', 'sort of', 'decent', 'okay', 'alright',
-        'good enough', 'reliable', 'works well', 'works as expected', 'satisfactory',
-        'fairly', 'rather', 'pretty good', 'not bad', 'average', 'mediocre', 'mixed',
-        'pros and cons', 'depends', 'might not', 'may not', 'for some', 'after using',
-        'after a week', 'after a month', 'quality is', 'build quality', 'material',
-        'construction', 'design', 'specific', 'details', 'experience', 'personally',
-        'in my opinion', 'in my experience', 'actually', 'took a while', 'learning curve'
-    ]
-    
     text_lower = review_text.lower()
     
-    fake_count = 0
-    for category, words in fake_keywords.items():
-        for word in words:
-            if re.search(r'\b' + re.escape(word) + r'\b', text_lower):
-                fake_count += 1
+    # STRONG FAKE INDICATORS - Multiple matches needed for fake
+    strong_fake = [
+        'best product ever', 'changed my life', 'unbelievable', 'perfect product',
+        'amazing beyond', 'everyone should buy', 'best ever made', 'never seen',
+        'magical', 'flawless', 'ultimate product', 'extraordinary', 'unbeatable',
+        'works 1000 times', 'five stars not enough', 'masterpiece', 'life changing',
+        'absolutely flawless', 'completely outstanding', 'totally perfect', 'far beyond expectations'
+    ]
     
-    genuine_count = 0
-    for word in genuine_keywords:
+    # MODERATE FAKE INDICATORS
+    moderate_fake = [
+        'amazing', 'incredible', 'perfect', 'awesome', 'spectacular', 'phenomenal',
+        'outstanding', 'magnificent', 'brilliant', 'exceptional', 'extraordinary',
+        'fantastic', 'wonderful', 'terrific', 'superb', 'divine', 'fabulous',
+        'unmatched', 'supreme', 'world-class', 'revolutionary', 'innovative'
+    ]
+    
+    # WEAK FAKE INDICATORS
+    weak_fake = [
+        'very good', 'excellent', 'great', 'love it', 'highly recommend',
+        'best', 'wonderful', 'beautiful', 'stunning'
+    ]
+    
+    # STRONG GENUINE INDICATORS
+    strong_genuine = [
+        'but', 'however', 'although', 'though', 'downside', 'issue', 'problem',
+        'complaint', 'not perfect', 'wish it had', 'could improve', 'better if',
+        'pros and cons', 'mixed', 'not ideal', 'needs improvement'
+    ]
+    
+    # MODERATE GENUINE INDICATORS
+    moderate_genuine = [
+        'good', 'decent', 'okay', 'alright', 'satisfactory', 'reliable',
+        'works well', 'fairly', 'pretty good', 'average', 'mediocre',
+        'material', 'quality', 'design', 'build', 'packaging', 'delivery',
+        'battery', 'performance', 'price', 'value', 'comfortable', 'easy to use'
+    ]
+    
+    # WEAK GENUINE INDICATORS
+    weak_genuine = [
+        'and', 'the', 'with', 'for', 'after', 'weeks', 'days', 'daily',
+        'using', 'use', 'works', 'installation', 'support', 'matched'
+    ]
+    
+    # Count strong fake indicators
+    strong_fake_count = 0
+    for phrase in strong_fake:
+        if phrase in text_lower:
+            strong_fake_count += 1
+    
+    # Count moderate fake indicators
+    moderate_fake_count = 0
+    for word in moderate_fake:
         if re.search(r'\b' + re.escape(word) + r'\b', text_lower):
-            genuine_count += 1
+            moderate_fake_count += 1
     
-    score += fake_count * 3
-    score -= genuine_count * 4
+    # Count weak fake indicators
+    weak_fake_count = 0
+    for word in weak_fake:
+        if re.search(r'\b' + re.escape(word) + r'\b', text_lower):
+            weak_fake_count += 1
     
+    # Count strong genuine indicators
+    strong_genuine_count = 0
+    for phrase in strong_genuine:
+        if phrase in text_lower:
+            strong_genuine_count += 1
+    
+    # Count moderate genuine indicators
+    moderate_genuine_count = 0
+    for word in moderate_genuine:
+        if re.search(r'\b' + re.escape(word) + r'\b', text_lower):
+            moderate_genuine_count += 1
+    
+    # Count weak genuine indicators
+    weak_genuine_count = 0
+    for word in weak_genuine:
+        if re.search(r'\b' + re.escape(word) + r'\b', text_lower):
+            weak_genuine_count += 1
+    
+    # Calculate fake score
+    fake_score = (strong_fake_count * 8) + (moderate_fake_count * 3) + (weak_fake_count * 0.5)
+    
+    # Calculate genuine score
+    genuine_score = (strong_genuine_count * 8) + (moderate_genuine_count * 3) + (weak_genuine_count * 0.5)
+    
+    # Check capitalization
     caps_count = sum(1 for c in review_text if c.isupper())
     caps_ratio = caps_count / len(review_text) if len(review_text) > 0 else 0
-    if caps_ratio > 0.30:
-        score += 15
-    elif caps_ratio > 0.20:
-        score += 10
-    elif caps_ratio > 0.10:
-        score += 5
+    if caps_ratio > 0.35:
+        fake_score += 8
     
+    # Check exclamation marks
     exclaim_count = review_text.count('!')
     if exclaim_count > 5:
-        score += 12
+        fake_score += 8
     elif exclaim_count > 3:
-        score += 8
-    elif exclaim_count == 1:
-        score += 0
+        fake_score += 5
     
+    # Check word count
     word_count = len(review_text.split())
     if word_count < 15:
-        score += 10
-    elif word_count < 30:
-        score += 5
-    elif word_count > 400:
-        score += 3
+        fake_score += 5
+    elif word_count > 300:
+        genuine_score += 3
     
+    # Check for specific measurements/numbers
     has_measurements = bool(re.search(r'\d+\s*(days?|weeks?|months?|years?|hours?|%)', review_text))
     if has_measurements:
-        score -= 8
+        genuine_score += 6
     
-    confidence = max(0, min(100, score))
-    
-    if confidence > 65:
-        prediction = "FAKE"
-    elif confidence < 35:
-        prediction = "GENUINE"
-    else:
+    # Calculate final confidence
+    total = fake_score + genuine_score
+    if total == 0:
+        confidence = 50
         prediction = "UNCERTAIN"
+    else:
+        confidence = (fake_score / total) * 100
+        
+        if confidence > 70:
+            prediction = "FAKE"
+        elif confidence < 30:
+            prediction = "GENUINE"
+            confidence = 100 - confidence
+        else:
+            prediction = "UNCERTAIN"
+            confidence = abs(confidence - 50)
+    
+    # Ensure confidence is between 10 and 95
+    confidence = max(10, min(95, confidence))
     
     return prediction, confidence
 
