@@ -124,19 +124,20 @@ def detect_fake_review(review_text):
         confidence = 50
         prediction = "UNCERTAIN"
     else:
-        confidence = (fake_score / total) * 100
+        fake_percentage = (fake_score / total) * 100
         
-        if confidence > 70:
+        if fake_percentage > 70:
             prediction = "FAKE"
-        elif confidence < 30:
+            confidence = fake_percentage
+        elif fake_percentage < 30:
             prediction = "GENUINE"
-            confidence = 100 - confidence
+            confidence = 100 - fake_percentage
         else:
             prediction = "UNCERTAIN"
-            confidence = abs(confidence - 50)
+            confidence = 50 + abs(fake_percentage - 50) / 2
     
-    # Ensure confidence is between 10 and 95
-    confidence = max(10, min(95, confidence))
+    # Ensure confidence is between 15 and 90
+    confidence = max(15, min(90, confidence))
     
     return prediction, confidence
 
